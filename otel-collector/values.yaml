@@ -1,0 +1,101 @@
+mode: deployment
+
+ports:
+  jaeger-compact:
+    enabled: true
+  jaeger-thrift:
+    enabled: true
+  jaeger-grpc:
+    enabled: true
+
+config:
+  receivers:
+    jaeger:
+      protocols:
+        thrift_http:                   
+        grpc:
+    # TODO: grafana-agent-operator log-instance needs to send logs to otel collector. Note: need probably to delete the default
+    loki:
+      protocols:
+        http:
+      use_incoming_timestamp: true
+    # prometheus:
+    #   config:
+    #     scrape_configs:
+    #     - job_name: 'otel-collector'
+    #       scrape_interval: 10s
+    #       static_configs:
+    #       - targets: ['0.0.0.0:8888']
+    #     - job_name: 'node'
+    #       scrape_interval: 10s
+    #       static_configs:
+    #       - targets: ['localhost:9100']
+
+  # processors:
+  #   batch:
+  #     send_batch_size: 1000
+  #     timeout: 10s
+  #   attributes:
+  #     actions:
+  #       - action: insert
+  #         key: loki.attribute.labels
+  #         value: container
+  #       - action: insert
+  #         key: loki.format
+  #         value: raw # raw, json, logfmt
+
+  # Inject the TraceID as an exemplar in the generated metrics by the spanmetrics connector.
+  connectors:
+    # The spanmetrics connector can be used with Prometheus exporter components.
+    # More: https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/connector/spanmetricsconnector/README.md
+    spanmetrics:
+      namespace: span.metrics
+      # histogram:
+      #   explicit:
+      #     buckets: [100us, 1ms, 2ms, 6ms, 10ms, 100ms, 250ms]
+      # dimensions:
+      #   - name: http.method
+      #     default: GET
+      #   - name: http.status_code
+      # dimensions_cache_size: 1000
+      # aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
+      # metrics_flush_interval: 15s
+
+  exporters:
+    loki:
+      endpoint: http://loki:3100/loki/api/v1/push
+    prometheusremotewrite:
+      # For generation of the target_info metric the incoming spans resource scope attributes must contain service.name and service.instance.id attributes.
+      # The target_info metric will be generated for each resource scope, while OpenTelemetry metric names and attributes will be normalized to be compliant with Prometheus naming rules.
+      target_info:
+        enabled: true
+      # endpoint: https://361398:eyJrIjoiYTNlZTFiOTc2NjA2ODJlOGY1ZGRlNGJkNWMwODRkMDY2M2U2MTE3NiIsIm4iOiJtZXRyaWNzLWtleSIsImlkIjo2MTU4ODJ9@prometheus-prod-01-eu-west-0.grafana.net/api/prom/push
+      endpoint: http://prometheus-kube-prometheus-prometheus:9090/api/v1/write
+    jaeger:
+      endpoint: tempo.default:4318
+
+  service:
+    pipelines:
+      logs:
+        receivers: [loki]
+        # processors: [attributes]
+        exporters: [loki]
+      traces:
+        receivers: [jaeger]
+        # processors: [batch]
+        # spanmetrics connector to generate metrics from received spans and export the metrics to the Prometheus Remote Write exporter.
+        exporters: [spanmetrics,jaeger]
+      metrics:
+        receivers: [spanmetrics]
+        # processors: [batch]
+        exporters: [prometheusremotewrite] # send to prometheus(with exemplars)
+
+    extensions: [health_check, pprof, zpages]
+
+  extensions:
+    health_check:
+      endpoint: 0.0.0.0:13133
+    pprof:
+      endpoint: 0.0.0.0:1777
+    zpages:
+      endpoint: 0.0.0.0:55679
