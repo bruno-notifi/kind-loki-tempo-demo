@@ -42,7 +42,7 @@ grafana:
         tag: 'http.path'
     orgId: 1
     type: tempo
-    url: http://tempo.default:3100
+    url: http://tempo-query-frontend.default:3100
     version: 1
     uid: tempo
   # https://grafana.com/docs/grafana/latest/datasources/loki/

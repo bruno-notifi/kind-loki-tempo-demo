@@ -1,73 +1,349 @@
 tempo:
-  server:
-    http_listen_port: 3100
+  tag: 2.1.1
 
-  receivers:
-    jaeger:
-      protocols:
-        grpc:
-          endpoint: 0.0.0.0:14250
-        thrift_binary:
-          endpoint: 0.0.0.0:6832
-        thrift_compact:
-          endpoint: 0.0.0.0:6831
-        thrift_http:
-          endpoint: 0.0.0.0:14268
+  memberlist:
+    # -- Adds the appProtocol field to the memberlist service. This allows memberlist to work with istio protocol selection. Set the optional service protocol. Ex: "tcp", "http" or "https".
+    appProtocol: "http"
+    abort_if_cluster_join_fails: false
+    # join_members:
+    #   - distributor:7947
+    #   - ingester-1:7947
+    #   - compactor:7947
+    #   - query_frontend:7947
+    #   - querier:7947
+    #   - metrics_generator:7947
+    service: 
+      publishNotReadyAddresses: false
 
-    otlp:
-      protocols:
-        grpc:
-          endpoint: "0.0.0.0:4317"
-        http:
-          endpoint: "0.0.0.0:4318"
+# Configuration for the ingester
+ingester:
+  # -- Annotations for the ingester StatefulSet
+  annotations: {}
+  # -- Number of replicas for the ingester
+  replicas: 1
+  persistence:
+    # -- Enable creating PVCs which is required when using boltdb-shipper
+    enabled: true
+  # -- Additional CLI args for the ingester
+  extraArgs: []
+  config:
+    # -- Number of copies of spans to store in the ingester ring
+    replication_factor: 3
+    # -- Amount of time a trace must be idle before flushing it to the wal.
+    trace_idle_period: null
+    # -- How often to sweep all tenants and move traces from live -> wal -> completed blocks.
+    flush_check_period: null
+    # -- Maximum size of a block before cutting it
+    max_block_bytes: null
+    # -- Maximum length of time before cutting a block
+    max_block_duration: null
+    # -- Duration to keep blocks in the ingester after they have been flushed
+    complete_block_timeout: null
+  # -- Adds the appProtocol field to the ingester service. This allows ingester to work with istio protocol selection.
+  appProtocol:
+    # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
+    # grpc: null
+    http2: null
 
-  distributor:
-    receivers:
-      jaeger:
-        protocols:
-          grpc:
-          thrift_compact: # Thrift protocol used by most current Jaeger clients. Port: 6831/UDP
-          thrift_http:
-          thrift_binary:
+# Configuration for the distributor
+distributor:
+  # -- Number of replicas for the distributor
+  replicas: 1
+  config:
+    # -- Enable to log every received trace id to help debug ingestion
+    # -- WARNING: Deprecated. Use log_received_spans instead.
+    log_received_traces: null
+    # -- Enable to log every received span to help debug ingestion or calculate span error distributions using the logs
+    log_received_spans:
+      enabled: false
+      include_all_attributes: false
+      filter_by_status_error: false
+    # -- Disables write extension with inactive ingesters
+    extend_writes: null
+  # -- Adds the appProtocol field to the distributor service. This allows distributor to work with istio protocol selection.
+  appProtocol:
+    # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
+    # grpc: null
+    http2: null
 
-  ingester:
-    max_block_duration: 5m 
-      # cut the headblock when this much time passes. this is being set for demo purposes and 
-      # should probably be left alone normally
-
-  compactor:
+# Configuration for the compactor
+compactor:
+  # -- Number of replicas for the compactor
+  replicas: 1
+  config:
     compaction:
-      block_retention: 1h  # overall Tempo trace retention. set for demo purposes
+      # -- Duration to keep blocks
+      block_retention: 48h
+      # Duration to keep blocks that have been compacted elsewhere
+      compacted_block_retention: 1h
+      # -- Blocks in this time window will be compacted together
+      compaction_window: 1h
+      # -- Amount of data to buffer from input blocks
+      v2_in_buffer_bytes: 5242880
+      # -- Flush data to backend when buffer is this large
+      v2_out_buffer_bytes: 20971520
+      # -- Maximum number of traces in a compacted block. WARNING: Deprecated. Use max_block_bytes instead.
+      max_compaction_objects: 6000000
+      # -- Maximum size of a compacted block in bytes
+      max_block_bytes: 107374182400
+      # -- Number of tenants to process in parallel during retention
+      retention_concurrency: 10
+      # -- Number of traces to buffer in memory during compaction
+      v2_prefetch_traces_count: 1000
+      # -- The maximum amount of time to spend compacting a single tenant before moving to the next
+      max_time_per_tenant: 5m
+      # -- The time between compaction cycles
+      compaction_cycle: 30s
+  appProtocol:
+    # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
+    # grpc: null
+    http2: null
 
-  # metrics_generator:
-  #   registry:
-  #     external_labels:
-  #       source: tempo
-  #       cluster: demo
-  #   storage:
-  #     path: /tmp/tempo/generator/wal
-  #     remote_write:
-  #       - url: http://prometheus-kube-prometheus-prometheus:9090/api/v1/write
-  #         send_exemplars: true
+# Configuration for the querier
+querier:
+  # -- Number of replicas for the querier
+  replicas: 1
+  config:
+    frontend_worker:
+      # -- grpc client configuration
+      grpc_client_config: {}
+    trace_by_id:
+      # -- Timeout for trace lookup requests
+      query_timeout: 10s
+    search:
+      # -- A list of external endpoints that the querier will use to offload backend search requests
+      external_endpoints: []
+      # -- Timeout for search requests
+      query_timeout: 30s
+      # -- If search_external_endpoints is set then the querier will primarily act as a proxy for whatever serverless backend you have configured. This setting allows the operator to have the querier prefer itself for a configurable number of subqueries.
+      prefer_self: 10
+      # -- If set to a non-zero value a second request will be issued at the provided duration. Recommended to be set to p99 of external search requests to reduce long tail latency.
+      external_hedge_requests_at: 8s
+      # -- The maximum number of requests to execute when hedging. Requires hedge_requests_at to be set.
+      external_hedge_requests_up_to: 2
+    # -- This value controls the overall number of simultaneous subqueries that the querier will service at once. It does not distinguish between the types of queries.
+    max_concurrent_queries: 20
 
-  storage:
-    trace:
-      # backend: s3                        # backend configuration to use
-      backend: local
-      local:
-        path: /tmp/tempo/traces
+  appProtocol:
+    # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
+    # grpc: null
+    http2: null
+
+# Configuration for the query-frontend
+queryFrontend:
+  query:
+    # -- Required for grafana version <7.5 for compatibility with jaeger-ui. Doesn't work on ARM arch
+    enabled: false
+    image:
+      # -- Docker image tag for the query-frontend image. Overrides `tempo.image.tag`
+      tag: null
+  config:
+    # -- Number of times to retry a request sent to a querier
+    max_retries: 2
+    # -- Number of block queries that are tolerated to error before considering the entire query as failed. Numbers greater than 0 make possible for a read to return partial results
+    tolerate_failed_blocks: 0
+    search:
+      # -- The number of concurrent jobs to execute when searching the backend
+      concurrent_jobs: 1000
+      # -- The target number of bytes for each job to handle when performing a backend search
+      target_bytes_per_job: 104857600
+    # -- Trace by ID lookup configuration
+    trace_by_id:
+      # -- The number of shards to split a trace by id query into.
+      query_shards: 50
+      # -- If set to a non-zero value, a second request will be issued at the provided duration. Recommended to be set to p99 of search requests to reduce long-tail latency.
+      hedge_requests_at: 2s
+      # -- The maximum number of requests to execute when hedging. Requires hedge_requests_at to be set. Must be greater than 0.
+      hedge_requests_up_to: 2
+  appProtocol:
+    # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
+    # grpc: null
+    http2: null
+
+traces:
+  jaeger:
+    grpc:
+      # -- Enable Tempo to ingest Jaeger GRPC traces
+      enabled: true
+      # -- Jaeger GRPC receiver config
+      receiverConfig: {}
+    thriftBinary:
+      # -- Enable Tempo to ingest Jaeger Thrift Binary traces
+      enabled: false
+      # -- Jaeger Thrift Binary receiver config
+      receiverConfig: {}
+    thriftCompact:
+      # -- Enable Tempo to ingest Jaeger Thrift Compact traces
+      enabled: true
+      # -- Jaeger Thrift Compact receiver config
+      receiverConfig: {}
+    thriftHttp:
+      # -- Enable Tempo to ingest Jaeger Thrift HTTP traces
+      enabled: true
+      # -- Jaeger Thrift HTTP receiver config
+      receiverConfig: {}
+  zipkin:
+    # -- Enable Tempo to ingest Zipkin traces
+    enabled: false
+    # -- Zipkin receiver config
+    receiverConfig: {}
+  otlp:
+    http:
+      # -- Enable Tempo to ingest Open Telemetry HTTP traces
+      enabled: false
+      # -- HTTP receiver advanced config
+      receiverConfig: {}
+    grpc:
+      # -- Enable Tempo to ingest Open Telemetry GRPC traces
+      enabled: false
+      # -- GRPC receiver advanced config
+      receiverConfig: {}
+  opencensus:
+    # -- Enable Tempo to ingest Open Census traces
+    enabled: false
+    # -- Open Census receiver config
+    receiverConfig: {}
+
+# Set Tempo server configuration
+# Refers to https://grafana.com/docs/tempo/latest/configuration/#server
+server:
+  # --  HTTP server listen host
+  httpListenPort: 3100
+  # -- Log level. Can be set to trace, debug, info (default), warn, error, fatal, panic
+  logLevel: info
+  # -- Log format. Can be set to logfmt (default) or json.
+  logFormat: logfmt
+  # -- Max gRPC message size that can be received
+  grpc_server_max_recv_msg_size: 4194304
+  # -- Max gRPC message size that can be sent
+  grpc_server_max_send_msg_size: 4194304
+  # -- Read timeout for HTTP server
+  http_server_read_timeout: 30s
+  # -- Write timeout for HTTP server
+  http_server_write_timeout: 30s
+
+storage:
+  trace:
+    # Settings for the block storage backend and buckets.
+    block:
+      # -- The supported block versions are v2 and vParquet, as specified in https://grafana.com/docs/tempo/latest/configuration/parquet/
+      version: vParquet
+    # -- The supported storage backends are gcs, s3 and azure, as specified in https://grafana.com/docs/tempo/latest/configuration/#storage
+    backend: local
+  # Settings for the Admin client storage backend and buckets. Only valid is enterprise.enabled is true.
+  admin:
+    # -- The supported storage backends are gcs, s3 and azure, as specified in https://grafana.com/docs/enterprise-traces/latest/config/reference/#admin_client_config
+    backend: filesystem
+
+# Global overrides
+global_overrides:
+  per_tenant_override_config: /conf/overrides.yaml
+  metrics_generator_processors:
+    - service-graphs
+    - span-metrics
+
+# Per tenants overrides
+overrides: |
+  overrides: {}
+
+# memcached is for all of the Tempo pieces to coordinate with each other.
+# you can use your self memcacherd by set enable: false and host + service
+memcached:
+  # -- Specified whether the memcached cachce should be enabled
+  enabled: false
+  image:
+    tag: 1.5.17-alpine
+    # -- Memcached Docker image pull policy
+    pullPolicy: IfNotPresent
+  host: memcached
+
+# Rules for the Prometheus Operator
+prometheusRule:
+  # -- If enabled, a PrometheusRule resource for Prometheus Operator is created
+  enabled: false
+
+minio:
+  enabled: false
+  mode: standalone
+  rootUser: grafana-tempo
+  rootPassword: supersecret
+  buckets:
+    # Default Tempo storage bucket.
+    - name: tempo-traces
+      policy: none
+      purge: false
+    # Bucket for traces storage if enterprise.enabled is true - requires license.
+    - name: enterprise-traces
+      policy: none
+      purge: false
+    # Admin client bucket if enterprise.enabled is true - requires license.
+    - name: enterprise-traces-admin
+      policy: none
+      purge: false
+  persistence:
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  # Changed the mc config path to '/tmp' from '/etc' as '/etc' is only writable by root and OpenShift will not permit this.
+  configPathmc: '/tmp/minio/mc/'
+
+# Configuration for the gateway
+gateway:
+  # -- Specifies whether the gateway should be enabled
+  enabled: true
+  # -- Number of replicas for the gateway
+  verboseLogging: true
+  image:
+    # -- The gateway image repository
+    repository: nginxinc/nginx-unprivileged
+    # -- The gateway image tag
+    tag: 1.19-alpine
+
+metricsGenerator:
+  # -- Specifies whether a metrics-generator should be deployed
+  enabled: true
+
+  ports:
+    - name: grpc
+      port: 9095
+      service: true
+    - name: http-memberlist
+      port: 7946
+      service: true
+    - name: http-metrics
+      port: 3100
+      service: true
+
+  appProtocol:
+    # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
+    # grpc: null
+    http: null
+
+  config:
+    registry:
+      collection_interval: 15s
+      external_labels: {}
+      stale_duration: 15m
+    processor:
+      service_graphs:
+        # -- Additional dimensions to add to the metrics. Dimensions are searched for in the
+        # -- resource and span attributes and are added to the metrics if present.
+        dimensions: []
+        histogram_buckets: [0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8]
+        max_items: 10000
+        wait: 10s
+        workers: 10
+      span_metrics:
+        # -- Additional dimensions to add to the metrics along with the default dimensions.
+        # -- Dimensions are searched for in the resource and span attributes and are added to the metrics if present.
+        dimensions: []
+        histogram_buckets: [0.002, 0.004, 0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1.02, 2.05, 4.10]
+    storage:
+      path: /var/tempo/wal
       wal:
-        path: /tmp/tempo/wal             # where to store the the wal locally
-      # s3:
-      #   endpoint: minio.svc.cluster.local
-      #   # access_key: **
-      #   # secret_key: **
-      #   insecure: true
-      #   # region: us-west-2
-      #   bucket: tempo-demo               # where to store data in minio
-      #   # For using AWS, select the appropriate regional endpoint and region
-
-
-  # overrides:
-  #   metrics_generator_processors: [service-graphs, span-metrics]
-
+      remote_write_flush_deadline: 1m
+      # -- A list of remote write endpoints.
+      # -- https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write
+      remote_write: []

@@ -2,6 +2,9 @@ loki:
   server:
     http_listen_port: 3100
 
+  # -- Adds the appProtocol field to the memberlist service. This allows memberlist to work with istio protocol selection. Ex: "http" or "tcp"
+  # appProtocol: "http"
+
   config: |
     auth_enabled: false
 
@@ -22,6 +25,7 @@ loki:
           store: memberlist
 
     memberlist:
+      bind_port: 7946
       join_members:
         - {{ include "loki.fullname" . }}-memberlist
 
@@ -134,3 +138,18 @@ loki:
       rule_path: /tmp/loki/scratch
       alertmanager_url: https://alertmanager.xx
       external_url: https://alertmanager.xx
+
+# Configuration for the table-manager
+tableManager:
+  # -- Specifies whether the table-manager should be enabled
+  enabled: true
+
+# Configuration for the compactor
+compactor:
+  # -- Specifies whether compactor should be enabled
+  enabled: true
+
+# Configuration for the ruler
+ruler:
+  # -- Specifies whether the ruler should be enabled
+  enabled: false

@@ -1,9 +1,25 @@
-mode: deployment
+mode: deployment  # Where the mode value needs to be set to one of daemonset, deployment or statefulset.
+
+# Note: Experimental
+ # Some care must be taken when using hostNetwork: true, as then OpenTelemetry Collector will listen on all the addresses in the host network namespace.
+hostNetwork: false
+
+# Note: Experimental
+# presets:
+  # The collector can be configured to add Kubernetes metadata to logs, metrics and traces.
+  #  failed to list *v1.ReplicaSet: replicasets.apps is forbidden: User "system:serviceaccount:default:opentelemetry-collector"
+  # kubernetesAttributes:
+  #   enabled: true
+#   hostMetrics:
+#     enabled: true
+  # logsCollection:
+  #   enabled: true
+  #   includeCollectorLogs: true
 
 ports:
-  jaeger-thrift: # 6831
+  jaeger-thrift:
     enabled: true
-  jaeger-grpc: # ?
+  jaeger-grpc:
     enabled: true
   metrics:
     enabled: true
@@ -72,7 +88,9 @@ config:
       # endpoint: https://361398:eyJrIjoiYTNlZTFiOTc2NjA2ODJlOGY1ZGRlNGJkNWMwODRkMDY2M2U2MTE3NiIsIm4iOiJtZXRyaWNzLWtleSIsImlkIjo2MTU4ODJ9@prometheus-prod-01-eu-west-0.grafana.net/api/prom/push
       endpoint: http://prometheus-kube-prometheus-prometheus:9090/api/v1/write
     jaeger:
-      endpoint: http://tempo.default:4318
+      endpoint: tempo-distributor.default:14250
+      tls:
+        insecure: true
 
   service:
     telemetry:

@@ -12,4 +12,4 @@ helm upgrade --install --values prometheus/values.yaml prometheus prometheus/kub
 helm upgrade --install --values otel-collector/values.yaml opentelemetry-collector open-telemetry/opentelemetry-collector
 helm upgrade --install --values promtail/values.yaml promtail grafana/promtail
 helm upgrade --install --values loki/loki.yaml loki grafana/loki-distributed
-helm upgrade --install --values tempo/values.yaml tempo grafana/tempo
+helm upgrade --install --values tempo/values.yaml tempo grafana/tempo-distributed
