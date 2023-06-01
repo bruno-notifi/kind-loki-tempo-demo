@@ -1,0 +1,73 @@
+tempo:
+  server:
+    http_listen_port: 3100
+
+  receivers:
+    jaeger:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:14250
+        thrift_binary:
+          endpoint: 0.0.0.0:6832
+        thrift_compact:
+          endpoint: 0.0.0.0:6831
+        thrift_http:
+          endpoint: 0.0.0.0:14268
+
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"
+        http:
+          endpoint: "0.0.0.0:4318"
+
+  distributor:
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+          thrift_compact: # Thrift protocol used by most current Jaeger clients. Port: 6831/UDP
+          thrift_http:
+          thrift_binary:
+
+  ingester:
+    max_block_duration: 5m 
+      # cut the headblock when this much time passes. this is being set for demo purposes and 
+      # should probably be left alone normally
+
+  compactor:
+    compaction:
+      block_retention: 1h  # overall Tempo trace retention. set for demo purposes
+
+  # metrics_generator:
+  #   registry:
+  #     external_labels:
+  #       source: tempo
+  #       cluster: demo
+  #   storage:
+  #     path: /tmp/tempo/generator/wal
+  #     remote_write:
+  #       - url: http://prometheus-kube-prometheus-prometheus:9090/api/v1/write
+  #         send_exemplars: true
+
+  storage:
+    trace:
+      # backend: s3                        # backend configuration to use
+      backend: local
+      local:
+        path: /tmp/tempo/traces
+      wal:
+        path: /tmp/tempo/wal             # where to store the the wal locally
+      # s3:
+      #   endpoint: minio.svc.cluster.local
+      #   # access_key: **
+      #   # secret_key: **
+      #   insecure: true
+      #   # region: us-west-2
+      #   bucket: tempo-demo               # where to store data in minio
+      #   # For using AWS, select the appropriate regional endpoint and region
+
+
+  # overrides:
+  #   metrics_generator_processors: [service-graphs, span-metrics]
+
