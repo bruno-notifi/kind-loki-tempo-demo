@@ -3,7 +3,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: app
-  namespace: prometheus
 spec:
   endpoints:
   - honorLabels: true
@@ -23,7 +22,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: db
-  namespace: prometheus
 spec:
   jobLabel: db
   selector:
@@ -37,7 +35,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: loadgen
-  namespace: prometheus
 spec:
   jobLabel: loadgen
   selector:
