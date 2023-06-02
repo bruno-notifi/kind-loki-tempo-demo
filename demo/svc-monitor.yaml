@@ -1,0 +1,56 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: app
+  namespace: demo
+  labels:
+    monitor: me
+spec:
+  jobLabel: app
+  selector:
+    matchLabels:
+      name: app
+  endpoints:
+  - port: http-metrics
+    path: /metrics
+    scheme: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: db
+  namespace: demo
+spec:
+  jobLabel: db
+  selector:
+    matchLabels:
+      name: db
+  endpoints:
+  - port: http-metrics
+    path: /metrics
+    scheme: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: loadgen
+  namespace: demo
+spec:
+  jobLabel: loadgen
+  selector:
+    matchLabels:
+      name: loadgen
+  endpoints:
+  - port: http-metrics
+    path: /metrics
+    scheme: http
+    # relabelings:
+    # - action: replace
+    #   replacement: default/$1
+    #   sourceLabels:
+    #   - job
+    #   targetLabel: job
+    # - action: replace
+    #   replacement: loki
+    #   targetLabel: cluster

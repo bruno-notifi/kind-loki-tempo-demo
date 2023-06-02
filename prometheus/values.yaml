@@ -1,9 +1,55 @@
+namespaceOverride: "prometheus"
+
+prometheusOperator:
+  # Define Log Format
+  # Use logfmt (default) or json logging
+  logFormat: logfmt
+
+  ## Decrease log verbosity to errors only
+  logLevel: info
+
+  namespaces: 
+    releaseNamespace: true
+    additional:
+    - kube-system
+
+alertmanager:
+
+  alertmanagerSpec:
+    ## Define Log Format
+    # Use logfmt (default) or json logging
+    logFormat: logfmt
+
+    ## Log level for Alertmanager to be configured with.
+    ##
+    logLevel: info
+
+  templateFiles: {}
+  #
+  ## An example template:
+  #   template_1.tmpl: |-
+  #       {{ define "cluster" }}{{ .ExternalURL | reReplaceAll ".*alertmanager\\.(.*)" "$1" }}{{ end }}
+  #
+  #       {{ define "slack.myorg.text" }}
+  #       {{- $root := . -}}
+  #       {{ range .Alerts }}
+  #         *Alert:* {{ .Annotations.summary }} - `{{ .Labels.severity }}`
+  #         *Cluster:* {{ template "cluster" $root }}
+  #         *Description:* {{ .Annotations.description }}
+  #         *Graph:* <{{ .GeneratorURL }}|:chart_with_upwards_trend:>
+  #         *Runbook:* <{{ .Annotations.runbook }}|:spiral_note_pad:>
+  #         *Details:*
+  #           {{ range .Labels.SortedPairs }} - *{{ .Name }}:* `{{ .Value }}`
+  #           {{ end }}
+  #       {{ end }}
+  #       {{ end }}
+
 grafana:
   sidecar:
     datasources:
       exemplarTraceIdDestinations:
         datasourceUid: tempo
-        traceIdLabelName: target_info # trace_id (orig)
+        traceIdLabelName: target_info # trace_id (orig) # TODO: Check this
 
   additionalDataSources:
   - name: Tempo
@@ -43,7 +89,7 @@ grafana:
     orgId: 1
     type: tempo
     # url: http://tempo-query-frontend.default:3100
-    url: http://tempo.default:3100
+    url: http://tempo.tempo:3100
     version: 1
     uid: tempo
   # https://grafana.com/docs/grafana/latest/datasources/loki/
@@ -52,7 +98,7 @@ grafana:
     type: loki
     uid: loki
     access: proxy
-    url: http://loki-gateway.default
+    url: http://loki-gateway.loki
     # url: http://loki-loki-distributed-gateway
     # url: http://loki-loki-distributed-querier-frontend.default:3100
     basicAuth: false
@@ -70,8 +116,73 @@ grafana:
 
 prometheus:
   prometheusSpec:
+
+    ## How long to retain metrics
+    ##
+    retention: 10d
+
+    ## If true, a nil or {} value for prometheus.prometheusSpec.ruleSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the PrometheusRule resources created
+    ##
+    ruleSelectorNilUsesHelmValues: false
+
+    ## PrometheusRules to be selected for target discovery.
+    ## If {}, select all PrometheusRules
+    ##
+    ruleSelector: {}
+      # matchExpressions:
+      #   - key: prometheus
+      #     operator: In
+      #     values:
+      #       - monitor
+    
+    ## If true, a nil or {} value for prometheus.prometheusSpec.serviceMonitorSelector will cause the
+    ## prometheus resource to be created with selectors based on values in the helm deployment,
+    ## which will also match the servicemonitors created
+    ##
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+    ## ServiceMonitors to be selected for target discovery.
+    ## If {}, select all ServiceMonitors
+    ##
+    serviceMonitorSelector: {}
+    ## Example which selects ServiceMonitors with label "prometheus" set to "somelabel"
+    # serviceMonitorSelector:
+    #   matchLabels:
+    #     monitor: "me"
+
+
+    ## Namespaces to be selected for ServiceMonitor discovery.
+    ##
+    serviceMonitorNamespaceSelector: {}
+    ## Example which selects ServiceMonitors in namespaces with label "prometheus" set to "somelabel"
+    # serviceMonitorNamespaceSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
+    #
+
+    probeSelectorNilUsesHelmValues: false
+    ## Probes to be selected for target discovery.
+    ## If {}, select all Probes
+    ##
+    probeSelector: {}
+    ## Example which selects Probes with label "prometheus" set to "somelabel"
+    # probeSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
+    
+    podMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelector: {}
+    ## Example which selects PodMonitors with label "prometheus" set to "somelabel"
+    # podMonitorSelector:
+    #   matchLabels:
+    #     prometheus: somelabel
+    
+
     ## Exemplars related settings that are runtime reloadable.
     ## It requires to enable the exemplar storage feature to be effective.
+    # TODO: Check this
     exemplars: ""
       ## Maximum number of exemplars stored in memory for all series.
       ## If not set, Prometheus uses its default value.
@@ -83,6 +194,7 @@ prometheus:
     enableFeatures:
       - exemplar-storage
       - remote-write-receiver
+      # - new-service-discovery-manager
 
     ## The remote_write spec configuration for Prometheus.
     ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#remotewritespec

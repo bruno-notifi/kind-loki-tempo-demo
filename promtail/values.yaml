@@ -3,7 +3,7 @@ config:
   serverPort: 3101
   clients:
     # - url: http://loki-gateway/loki/api/v1/push
-    - url: http://opentelemetry-collector:3500/loki/api/v1/push
+    - url: http://opentelemetry-collector.otel:3500/loki/api/v1/push
 
   snippets:
     scrapeConfigs: |
