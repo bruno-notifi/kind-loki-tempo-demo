@@ -42,7 +42,8 @@ grafana:
         tag: 'http.path'
     orgId: 1
     type: tempo
-    url: http://tempo-query-frontend.default:3100
+    # url: http://tempo-query-frontend.default:3100
+    url: http://tempo.default:3100
     version: 1
     uid: tempo
   # https://grafana.com/docs/grafana/latest/datasources/loki/
@@ -51,7 +52,8 @@ grafana:
     type: loki
     uid: loki
     access: proxy
-    url: http://loki-loki-distributed-gateway
+    url: http://loki-gateway.default
+    # url: http://loki-loki-distributed-gateway
     # url: http://loki-loki-distributed-querier-frontend.default:3100
     basicAuth: false
     jsonData:

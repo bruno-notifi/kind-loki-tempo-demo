@@ -1,29 +1,43 @@
-tempo:
-  tag: 2.1.1
-
-  memberlist:
-    # -- Adds the appProtocol field to the memberlist service. This allows memberlist to work with istio protocol selection. Set the optional service protocol. Ex: "tcp", "http" or "https".
-    appProtocol: "http"
-    abort_if_cluster_join_fails: false
-    # join_members:
-    #   - distributor:7947
-    #   - ingester-1:7947
-    #   - compactor:7947
-    #   - query_frontend:7947
-    #   - querier:7947
-    #   - metrics_generator:7947
-    service: 
-      publishNotReadyAddresses: false
+# tempo:
+  # memberlist:
+  #   abort_if_cluster_join_fails: false
+  #   join_members:
+  #     - tempo-gossip-ring
+  #   #   - distributor:7946
+  #   #   - ingester:7946
+  #   #   - compactor:7946
+  #   #   - query_frontend:7946
+  #   #   - querier:7946
+  #   #   - metrics_generator:7946
+  #   service:
+  #     publishNotReadyAddresses: false
 
 # Configuration for the ingester
 ingester:
+  # https://cortexmetrics.io/docs/configuration/configuration-file/#ingester_config
+  lifecycler:
+    ring:
+      kvstore:
+        # Backend storage to use for the ring. Supported values are: consul, etcd,
+        # inmemory, memberlist, multi.
+        store: memberlist
+        memberlist_config:
+          # IP, hostname or an entry specified in the DNS Service Discovery format.
+          join_members:
+            - tempo-compactor
+            - tempo-distributor
+            - tempo-ingester
+            - tempo-querier
+            - tempo-query-frontend
+          max_join_retries: 20
+          abort_if_cluster_join_fails: false
   # -- Annotations for the ingester StatefulSet
   annotations: {}
   # -- Number of replicas for the ingester
   replicas: 1
   persistence:
     # -- Enable creating PVCs which is required when using boltdb-shipper
-    enabled: true
+    enabled: false
   # -- Additional CLI args for the ingester
   extraArgs: []
   config:
@@ -42,11 +56,27 @@ ingester:
   # -- Adds the appProtocol field to the ingester service. This allows ingester to work with istio protocol selection.
   appProtocol:
     # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
-    # grpc: null
-    http2: null
+    grpc: null
 
 # Configuration for the distributor
 distributor:
+  lifecycler:
+    ring:
+      kvstore:
+        # Backend storage to use for the ring. Supported values are: consul, etcd,
+        # inmemory, memberlist, multi.
+        store: memberlist
+        memberlist_config:
+          # IP, hostname or an entry specified in the DNS Service Discovery format.
+          join_members:
+            - tempo-compactor
+            - tempo-distributor
+            - tempo-ingester
+            - tempo-querier
+            - tempo-query-frontend
+          max_join_retries: 20
+          abort_if_cluster_join_fails: false
+          rejoin_interval: 5s
   # -- Number of replicas for the distributor
   replicas: 1
   config:
@@ -63,11 +93,27 @@ distributor:
   # -- Adds the appProtocol field to the distributor service. This allows distributor to work with istio protocol selection.
   appProtocol:
     # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
-    # grpc: null
-    http2: null
+    grpc: null
 
 # Configuration for the compactor
 compactor:
+  lifecycler:
+    ring:
+      kvstore:
+        # Backend storage to use for the ring. Supported values are: consul, etcd,
+        # inmemory, memberlist, multi.
+        store: memberlist
+        memberlist_config:
+          # IP, hostname or an entry specified in the DNS Service Discovery format.
+          join_members:
+            - tempo-compactor
+            - tempo-distributor
+            - tempo-ingester
+            - tempo-querier
+            - tempo-query-frontend
+          max_join_retries: 20
+          abort_if_cluster_join_fails: false
+          rejoin_interval: 5s
   # -- Number of replicas for the compactor
   replicas: 1
   config:
@@ -96,14 +142,27 @@ compactor:
       compaction_cycle: 30s
   appProtocol:
     # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
-    # grpc: null
-    http2: null
+    grpc: null
 
 # Configuration for the querier
 querier:
   # -- Number of replicas for the querier
   replicas: 1
   config:
+    ring:
+      kvstore:
+        store: memberlist
+        memberlist_config:
+          # IP, hostname or an entry specified in the DNS Service Discovery format.
+          join_members:
+            - tempo-compactor
+            - tempo-distributor
+            - tempo-ingester
+            - tempo-querier
+            - tempo-query-frontend
+          max_join_retries: 20
+          abort_if_cluster_join_fails: false
+          rejoin_interval: 5s
     frontend_worker:
       # -- grpc client configuration
       grpc_client_config: {}
@@ -126,8 +185,7 @@ querier:
 
   appProtocol:
     # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
-    # grpc: null
-    http2: null
+    grpc: null
 
 # Configuration for the query-frontend
 queryFrontend:
@@ -138,6 +196,17 @@ queryFrontend:
       # -- Docker image tag for the query-frontend image. Overrides `tempo.image.tag`
       tag: null
   config:
+    # ring:
+    #   kvstore:
+    #     store: memberlist
+        # memberlist_config:
+        #   # IP, hostname or an entry specified in the DNS Service Discovery format.
+        #   join_members:
+        #     - tempo-compactor
+        #     - tempo-distributor
+        #     - tempo-ingester
+        #     - tempo-querier
+        #     - tempo-query-frontend
     # -- Number of times to retry a request sent to a querier
     max_retries: 2
     # -- Number of block queries that are tolerated to error before considering the entire query as failed. Numbers greater than 0 make possible for a read to return partial results
@@ -156,9 +225,8 @@ queryFrontend:
       # -- The maximum number of requests to execute when hedging. Requires hedge_requests_at to be set. Must be greater than 0.
       hedge_requests_up_to: 2
   appProtocol:
-    # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
-    # grpc: null
-    http2: null
+    #-- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
+    grpc: null
 
 traces:
   jaeger:
@@ -235,115 +303,96 @@ storage:
     # -- The supported storage backends are gcs, s3 and azure, as specified in https://grafana.com/docs/enterprise-traces/latest/config/reference/#admin_client_config
     backend: filesystem
 
-# Global overrides
-global_overrides:
-  per_tenant_override_config: /conf/overrides.yaml
-  metrics_generator_processors:
-    - service-graphs
-    - span-metrics
-
-# Per tenants overrides
-overrides: |
-  overrides: {}
-
-# memcached is for all of the Tempo pieces to coordinate with each other.
-# you can use your self memcacherd by set enable: false and host + service
-memcached:
-  # -- Specified whether the memcached cachce should be enabled
-  enabled: false
-  image:
-    tag: 1.5.17-alpine
-    # -- Memcached Docker image pull policy
-    pullPolicy: IfNotPresent
-  host: memcached
-
-# Rules for the Prometheus Operator
-prometheusRule:
-  # -- If enabled, a PrometheusRule resource for Prometheus Operator is created
-  enabled: false
-
-minio:
-  enabled: false
-  mode: standalone
-  rootUser: grafana-tempo
-  rootPassword: supersecret
-  buckets:
-    # Default Tempo storage bucket.
-    - name: tempo-traces
-      policy: none
-      purge: false
-    # Bucket for traces storage if enterprise.enabled is true - requires license.
-    - name: enterprise-traces
-      policy: none
-      purge: false
-    # Admin client bucket if enterprise.enabled is true - requires license.
-    - name: enterprise-traces-admin
-      policy: none
-      purge: false
-  persistence:
-    size: 5Gi
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-  # Changed the mc config path to '/tmp' from '/etc' as '/etc' is only writable by root and OpenShift will not permit this.
-  configPathmc: '/tmp/minio/mc/'
-
-# Configuration for the gateway
-gateway:
-  # -- Specifies whether the gateway should be enabled
-  enabled: true
-  # -- Number of replicas for the gateway
-  verboseLogging: true
-  image:
-    # -- The gateway image repository
-    repository: nginxinc/nginx-unprivileged
-    # -- The gateway image tag
-    tag: 1.19-alpine
-
-metricsGenerator:
-  # -- Specifies whether a metrics-generator should be deployed
-  enabled: true
-
-  ports:
-    - name: grpc
-      port: 9095
-      service: true
-    - name: http-memberlist
-      port: 7946
-      service: true
-    - name: http-metrics
-      port: 3100
-      service: true
-
-  appProtocol:
-    # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
-    # grpc: null
-    http: null
-
-  config:
-    registry:
-      collection_interval: 15s
-      external_labels: {}
-      stale_duration: 15m
-    processor:
-      service_graphs:
-        # -- Additional dimensions to add to the metrics. Dimensions are searched for in the
-        # -- resource and span attributes and are added to the metrics if present.
-        dimensions: []
-        histogram_buckets: [0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8]
-        max_items: 10000
-        wait: 10s
-        workers: 10
-      span_metrics:
-        # -- Additional dimensions to add to the metrics along with the default dimensions.
-        # -- Dimensions are searched for in the resource and span attributes and are added to the metrics if present.
-        dimensions: []
-        histogram_buckets: [0.002, 0.004, 0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1.02, 2.05, 4.10]
-    storage:
-      path: /var/tempo/wal
-      wal:
-      remote_write_flush_deadline: 1m
-      # -- A list of remote write endpoints.
-      # -- https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write
-      remote_write: []
+# # Global overrides
+# global_overrides:
+#   per_tenant_override_config: /conf/overrides.yaml
+#   metrics_generator_processors:
+#     - service-graphs
+#     - span-metrics
+#
+# # Per tenants overrides
+# overrides: |
+#   overrides: {}
+#
+# # memcached is for all of the Tempo pieces to coordinate with each other.
+# # you can use your self memcacherd by set enable: false and host + service
+# memcached:
+#   # -- Specified whether the memcached cachce should be enabled
+#   enabled: false
+#   image:
+#     tag: 1.5.17-alpine
+#     # -- Memcached Docker image pull policy
+#     pullPolicy: IfNotPresent
+#   host: memcached
+#
+# # Rules for the Prometheus Operator
+# prometheusRule:
+#   # -- If enabled, a PrometheusRule resource for Prometheus Operator is created
+#   enabled: true
+#
+# metaMonitoring:
+#   # ServiceMonitor configuration
+#   serviceMonitor:
+#     # -- If enabled, ServiceMonitor resources for Prometheus Operator are created
+#     enabled: true
+#
+# # Configuration for the gateway
+# gateway:
+#   # -- Specifies whether the gateway should be enabled
+#   enabled: true
+#   # -- Number of replicas for the gateway
+#   verboseLogging: true
+#   image:
+#     # -- The gateway image repository
+#     repository: nginxinc/nginx-unprivileged
+#     # -- The gateway image tag
+#     tag: 1.19-alpine
+#
+# metricsGenerator:
+#   # -- Specifies whether a metrics-generator should be deployed
+#   enabled: false
+#
+#   ports:
+#     - name: grpc
+#       port: 9095
+#       service: true
+#     - name: http-memberlist
+#       port: 7946
+#       service: true
+#     - name: http-metrics
+#       port: 3100
+#       service: true
+#
+#   # appProtocol:
+#     # -- Set the optional grpc service protocol. Ex: "grpc", "http2" or "https"
+#     # grpc: null
+#
+#   config:
+#     ring:
+#       kvstore:
+#         store: memberlist
+#     registry:
+#       collection_interval: 15s
+#       external_labels: {}
+#       stale_duration: 15m
+#     processor:
+#       service_graphs:
+#         # -- Additional dimensions to add to the metrics. Dimensions are searched for in the
+#         # -- resource and span attributes and are added to the metrics if present.
+#         dimensions: []
+#         histogram_buckets: [0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8]
+#         max_items: 10000
+#         wait: 10s
+#         workers: 10
+#       span_metrics:
+#         # -- Additional dimensions to add to the metrics along with the default dimensions.
+#         # -- Dimensions are searched for in the resource and span attributes and are added to the metrics if present.
+#         dimensions: []
+#         histogram_buckets: [0.002, 0.004, 0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1.02, 2.05, 4.10]
+#     storage:
+#       path: /var/tempo/wal
+#       wal:
+#       remote_write_flush_deadline: 1m
+#       # -- A list of remote write endpoints.
+#       # -- https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write
+#       remote_write: []
