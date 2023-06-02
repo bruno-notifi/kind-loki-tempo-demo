@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: app
   namespace: demo
+  labels:
+    name: app
 spec:
   replicas: 1
   selector:
@@ -38,6 +40,8 @@ kind: Deployment
 metadata:
   name: db
   namespace: demo
+  labels:
+    name: db 
 spec:
   replicas: 1
   selector:
@@ -72,6 +76,8 @@ kind: Deployment
 metadata:
   name: loadgen
   namespace: demo
+  labels:
+    name: loadgen
 spec:
   replicas: 1
   selector:

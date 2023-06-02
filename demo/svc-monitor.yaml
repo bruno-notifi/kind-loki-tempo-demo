@@ -3,24 +3,27 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: app
-  namespace: demo
-  labels:
-    monitor: me
+  namespace: prometheus
 spec:
+  endpoints:
+  - honorLabels: true
+    port: http-metrics
+    path: /metrics
+    scheme: http
+    scrapeTimeout: 30s
   jobLabel: app
+  namespaceSelector:
+    matchNames:
+      - demo
   selector:
     matchLabels:
       name: app
-  endpoints:
-  - port: http-metrics
-    path: /metrics
-    scheme: http
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: db
-  namespace: demo
+  namespace: prometheus
 spec:
   jobLabel: db
   selector:
@@ -29,13 +32,12 @@ spec:
   endpoints:
   - port: http-metrics
     path: /metrics
-    scheme: http
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: loadgen
-  namespace: demo
+  namespace: prometheus
 spec:
   jobLabel: loadgen
   selector:
@@ -44,7 +46,6 @@ spec:
   endpoints:
   - port: http-metrics
     path: /metrics
-    scheme: http
     # relabelings:
     # - action: replace
     #   replacement: default/$1

@@ -1,24 +1,22 @@
 ---
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
   name: app
   namespace: demo
   labels:
     name: app
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     name: app
   ports:
   - protocol: TCP
-    nodePort: 30030
     port: 80
     targetPort: 80
-    name: http-metrics
 ---
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
   name: db
   namespace: demo
@@ -32,10 +30,9 @@ spec:
   - protocol: TCP
     port: 80
     targetPort: 80
-    name: http-metrics
 ---
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
   name: loadgen
   namespace: demo
@@ -49,4 +46,3 @@ spec:
   - protocol: TCP
     port: 80
     targetPort: 80
-    name: http-metrics
