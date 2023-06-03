@@ -1038,7 +1038,7 @@ data:
             "name": "namespace",
             "options": [],
             "query": {
-              "query": "label_values(kube_namespace_status_phase{job=\"integrations/kubernetes/kube-state-metrics\"}, namespace)",
+              "query": "label_values(kube_namespace_status_phase{}, namespace)",
               "refId": "grafanacloud-k8sdemo-prom-namespace-Variable-Query"
             },
             "refresh": 1,
