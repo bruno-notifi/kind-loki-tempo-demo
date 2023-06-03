@@ -197,7 +197,7 @@ data:
               "datasource": {
                 "uid": "$datasource"
               },
-              "expr": "sum by (status_code) (rate(tns_request_duration_seconds_count{job=~\"$namespace/loadgen\"}[$__rate_interval]))",
+              "expr": "sum by (status_code) (rate(tns_request_duration_seconds_count{job=~\"loadgen\"}[$__rate_interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{status_code}}",
@@ -313,7 +313,7 @@ data:
                 "uid": "$datasource"
               },
               "exemplar": true,
-              "expr": "histogram_quantile(0.99, sum(rate(tns_request_duration_seconds_bucket{job=~\"$namespace/loadgen\"}[$__rate_interval])) by (le)) * 1",
+              "expr": "histogram_quantile(0.99, sum(rate(tns_request_duration_seconds_bucket{job=~\"loadgen\"}[$__rate_interval])) by (le)) * 1",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "99th Percentile",
@@ -325,7 +325,7 @@ data:
                 "uid": "$datasource"
               },
               "exemplar": true,
-              "expr": "histogram_quantile(0.50, sum(rate(tns_request_duration_seconds_bucket{job=~\"$namespace/loadgen\"}[$__rate_interval])) by (le)) * 1",
+              "expr": "histogram_quantile(0.50, sum(rate(tns_request_duration_seconds_bucket{job=~\"loadgen\"}[$__rate_interval])) by (le)) * 1",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "50th Percentile",
@@ -337,7 +337,7 @@ data:
                 "uid": "$datasource"
               },
               "exemplar": true,
-              "expr": "sum(rate(tns_request_duration_seconds_sum{job=~\"$namespace/loadgen\"}[$__rate_interval])) * 1 / sum(rate(tns_request_duration_seconds_count{job=~\"$namespace/loadgen\"}[$__rate_interval]))",
+              "expr": "sum(rate(tns_request_duration_seconds_sum{job=~\"loadgen\"}[$__rate_interval])) * 1 / sum(rate(tns_request_duration_seconds_count{job=~\"loadgen\"}[$__rate_interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "Average",
@@ -510,7 +510,7 @@ data:
               "datasource": {
                 "uid": "$datasource"
               },
-              "expr": "sum by (status_code) (rate(tns_request_duration_seconds_count{job=~\"$namespace/app\"}[$__rate_interval]))",
+              "expr": "sum by (status_code) (rate(tns_request_duration_seconds_count{job=~\"app\"}[$__rate_interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{status_code}}",
@@ -626,7 +626,7 @@ data:
                 "uid": "$datasource"
               },
               "exemplar": true,
-              "expr": "histogram_quantile(0.99, sum(rate(tns_request_duration_seconds_bucket{job=~\"$namespace/app\"}[$__rate_interval])) by (le)) * 1",
+              "expr": "histogram_quantile(0.99, sum(rate(tns_request_duration_seconds_bucket{job=~\"app\"}[$__rate_interval])) by (le)) * 1",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "99th Percentile",
@@ -638,7 +638,7 @@ data:
                 "uid": "$datasource"
               },
               "exemplar": true,
-              "expr": "histogram_quantile(0.50, sum(rate(tns_request_duration_seconds_bucket{job=~\"$namespace/app\"}[$__rate_interval])) by (le)) * 1",
+              "expr": "histogram_quantile(0.50, sum(rate(tns_request_duration_seconds_bucket{job=~\"app\"}[$__rate_interval])) by (le)) * 1",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "50th Percentile",
@@ -650,7 +650,7 @@ data:
                 "uid": "$datasource"
               },
               "exemplar": true,
-              "expr": "sum(rate(tns_request_duration_seconds_sum{job=~\"$namespace/app\"}[$__rate_interval])) * 1 / sum(rate(tns_request_duration_seconds_count{job=~\"$namespace/app\"}[$__rate_interval]))",
+              "expr": "sum(rate(tns_request_duration_seconds_sum{job=~\"app\"}[$__rate_interval])) * 1 / sum(rate(tns_request_duration_seconds_count{job=~\"app\"}[$__rate_interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "Average",
@@ -823,7 +823,7 @@ data:
               "datasource": {
                 "uid": "$datasource"
               },
-              "expr": "sum by (status_code) (rate(tns_request_duration_seconds_count{job=~\"$namespace/db\"}[$__rate_interval]))",
+              "expr": "sum by (status_code) (rate(tns_request_duration_seconds_count{job=~\"db\"}[$__rate_interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{status_code}}",
@@ -939,7 +939,7 @@ data:
                 "uid": "$datasource"
               },
               "exemplar": true,
-              "expr": "histogram_quantile(0.99, sum(rate(tns_request_duration_seconds_bucket{job=~\"$namespace/db\"}[$__rate_interval])) by (le)) * 1",
+              "expr": "histogram_quantile(0.99, sum(rate(tns_request_duration_seconds_bucket{job=~\"db\"}[$__rate_interval])) by (le)) * 1",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "99th Percentile",
@@ -951,7 +951,7 @@ data:
                 "uid": "$datasource"
               },
               "exemplar": true,
-              "expr": "histogram_quantile(0.50, sum(rate(tns_request_duration_seconds_bucket{job=~\"$namespace/db\"}[$__rate_interval])) by (le)) * 1",
+              "expr": "histogram_quantile(0.50, sum(rate(tns_request_duration_seconds_bucket{job=~\"db\"}[$__rate_interval])) by (le)) * 1",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "50th Percentile",
@@ -963,7 +963,7 @@ data:
                 "uid": "$datasource"
               },
               "exemplar": true,
-              "expr": "sum(rate(tns_request_duration_seconds_sum{job=~\"$namespace/db\"}[$__rate_interval])) * 1 / sum(rate(tns_request_duration_seconds_count{job=~\"$namespace/db\"}[$__rate_interval]))",
+              "expr": "sum(rate(tns_request_duration_seconds_sum{job=~\"db\"}[$__rate_interval])) * 1 / sum(rate(tns_request_duration_seconds_count{job=~\"db\"}[$__rate_interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "Average",
