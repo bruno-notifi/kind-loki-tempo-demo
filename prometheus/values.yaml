@@ -1,55 +1,45 @@
-namespaceOverride: "prometheus"
+global:
+  rbac:
+    ## Create ClusterRoles that extend the existing view, edit and admin ClusterRoles to interact with prometheus-operator CRDs
+    ## Ref: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles
+    createAggregateClusterRoles: true
 
 prometheusOperator:
   # Define Log Format
   # Use logfmt (default) or json logging
-  logFormat: logfmt
+  logFormat: json
 
   ## Decrease log verbosity to errors only
-  logLevel: info
+  logLevel: debug
 
   namespaces: 
     releaseNamespace: true
     additional:
     - kube-system
+    - default
+    - demo
+    - sloth
+    - loki
+    - otel
+    - tempo
 
 alertmanager:
 
   alertmanagerSpec:
     ## Define Log Format
     # Use logfmt (default) or json logging
-    logFormat: logfmt
+    logFormat: json
 
     ## Log level for Alertmanager to be configured with.
     ##
     logLevel: info
-
-  templateFiles: {}
-  #
-  ## An example template:
-  #   template_1.tmpl: |-
-  #       {{ define "cluster" }}{{ .ExternalURL | reReplaceAll ".*alertmanager\\.(.*)" "$1" }}{{ end }}
-  #
-  #       {{ define "slack.myorg.text" }}
-  #       {{- $root := . -}}
-  #       {{ range .Alerts }}
-  #         *Alert:* {{ .Annotations.summary }} - `{{ .Labels.severity }}`
-  #         *Cluster:* {{ template "cluster" $root }}
-  #         *Description:* {{ .Annotations.description }}
-  #         *Graph:* <{{ .GeneratorURL }}|:chart_with_upwards_trend:>
-  #         *Runbook:* <{{ .Annotations.runbook }}|:spiral_note_pad:>
-  #         *Details:*
-  #           {{ range .Labels.SortedPairs }} - *{{ .Name }}:* `{{ .Value }}`
-  #           {{ end }}
-  #       {{ end }}
-  #       {{ end }}
 
 grafana:
   sidecar:
     datasources:
       exemplarTraceIdDestinations:
         datasourceUid: tempo
-        traceIdLabelName: target_info # trace_id (orig) # TODO: Check this
+        traceIdLabelName: trace_id  # TODO: try target_info metric if does not work
 
   additionalDataSources:
   - name: Tempo
@@ -115,70 +105,30 @@ grafana:
           url: '$${__value.raw}'
 
 prometheus:
+
   prometheusSpec:
 
     ## How long to retain metrics
     ##
     retention: 10d
+    
+    ignoreNamespaceSelectors: true
 
-    ## If true, a nil or {} value for prometheus.prometheusSpec.ruleSelector will cause the
-    ## prometheus resource to be created with selectors based on values in the helm deployment,
-    ## which will also match the PrometheusRule resources created
-    ##
     ruleSelectorNilUsesHelmValues: false
 
-    ## PrometheusRules to be selected for target discovery.
-    ## If {}, select all PrometheusRules
-    ##
-    ruleSelector: {}
-      # matchExpressions:
-      #   - key: prometheus
-      #     operator: In
-      #     values:
-      #       - monitor
-    
-    ## If true, a nil or {} value for prometheus.prometheusSpec.serviceMonitorSelector will cause the
-    ## prometheus resource to be created with selectors based on values in the helm deployment,
-    ## which will also match the servicemonitors created
-    ##
     serviceMonitorSelectorNilUsesHelmValues: false
 
-    ## ServiceMonitors to be selected for target discovery.
-    ## If {}, select all ServiceMonitors
-    ##
-    serviceMonitorSelector: {}
-    ## Example which selects ServiceMonitors with label "prometheus" set to "somelabel"
-    # serviceMonitorSelector:
-    #   matchLabels:
-    #     monitor: "me"
-
-
-    ## Namespaces to be selected for ServiceMonitor discovery.
-    ##
-    serviceMonitorNamespaceSelector: {}
-    ## Example which selects ServiceMonitors in namespaces with label "prometheus" set to "somelabel"
-    # serviceMonitorNamespaceSelector:
-    #   matchLabels:
-    #     prometheus: somelabel
-    #
-
     probeSelectorNilUsesHelmValues: false
-    ## Probes to be selected for target discovery.
-    ## If {}, select all Probes
-    ##
-    probeSelector: {}
-    ## Example which selects Probes with label "prometheus" set to "somelabel"
-    # probeSelector:
-    #   matchLabels:
-    #     prometheus: somelabel
-    
+
     podMonitorSelectorNilUsesHelmValues: false
-    podMonitorSelector: {}
-    ## Example which selects PodMonitors with label "prometheus" set to "somelabel"
-    # podMonitorSelector:
-    #   matchLabels:
-    #     prometheus: somelabel
-    
+
+    ## Log level for Prometheus be configured in
+    ##
+    logLevel: debug
+
+    ## Log format for Prometheus be configured in
+    ##
+    logFormat: json
 
     ## Exemplars related settings that are runtime reloadable.
     ## It requires to enable the exemplar storage feature to be effective.
@@ -210,7 +160,6 @@ prometheus:
         #     key: password
     # - url: http://remote1/push
     ## additionalRemoteWrite is appended to remoteWrite
-    additionalRemoteWrite: []
 
     ## Enable/Disable Grafana dashboards provisioning for prometheus remote write feature
-    remoteWriteDashboards: false
+    remoteWriteDashboards: true

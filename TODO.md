@@ -25,10 +25,12 @@
 
 ## **Beyond**
 
+- What can Otel do to enrich logs, metrics and tracing?
 - Exemplars? 
 - Deployment Markers?
 - Blue Green deployment?
 - Canary deployment?
+- Kubecost
 
 ## **Links**
 

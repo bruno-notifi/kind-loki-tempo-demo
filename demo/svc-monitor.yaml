@@ -4,16 +4,11 @@ kind: ServiceMonitor
 metadata:
   name: app
 spec:
+  # jobLabel: app
   endpoints:
-  - honorLabels: true
-    port: http-metrics
+  - port: http-metrics
     path: /metrics
     scheme: http
-    scrapeTimeout: 30s
-  jobLabel: app
-  namespaceSelector:
-    matchNames:
-      - demo
   selector:
     matchLabels:
       name: app
@@ -23,26 +18,26 @@ kind: ServiceMonitor
 metadata:
   name: db
 spec:
-  jobLabel: db
-  selector:
-    matchLabels:
-      name: db
+  # jobLabel: db
   endpoints:
   - port: http-metrics
     path: /metrics
+  selector:
+    matchLabels:
+      name: db
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: loadgen
 spec:
-  jobLabel: loadgen
-  selector:
-    matchLabels:
-      name: loadgen
+  # jobLabel: loadgen
   endpoints:
   - port: http-metrics
     path: /metrics
+  selector:
+    matchLabels:
+      name: loadgen
     # relabelings:
     # - action: replace
     #   replacement: default/$1
@@ -52,3 +47,14 @@ spec:
     # - action: replace
     #   replacement: loki
     #   targetLabel: cluster
+    # - sourceLabels: [__meta_kubernetes_pod_container_port_name]
+    #   action: keep
+    #   regex: '.*-envoy-prom'
+    # - action: labeldrop
+    #   regex: "__meta_kubernetes_pod_label_(.+)"
+    # - sourceLabels: [__meta_kubernetes_namespace]
+    #   action: replace
+    #   targetLabel: namespace
+    # - sourceLabels: [__meta_kubernetes_pod_name]
+    #   action: replace
+    #   targetLabel: pod_name

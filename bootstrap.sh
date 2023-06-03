@@ -34,9 +34,9 @@ kubectl apply -f sloth/configmap.yaml -n prometheus
 
 # demo
 kubectl create namespace demo
-kubectl apply -f demo/deploy.yaml
-kubectl apply -f demo/svc.yaml
-kubectl apply -f demo/svc-monitor.yaml -n prometheus
+kubectl apply -f demo/deploy.yaml -n demo
+kubectl apply -f demo/svc.yaml -n demo
+kubectl apply -f demo/svc-monitor.yaml -n demo
 kubectl apply -f demo/configmap.yaml -n prometheus
 
 # K6
