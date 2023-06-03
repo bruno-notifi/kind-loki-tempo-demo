@@ -55,10 +55,11 @@ config:
       actions:
         - action: insert
           key: loki.attribute.labels
-          value: container
+          value: container, pod, namespace, job
         - action: insert
           key: loki.format
-          value: raw # raw, json, logfmt
+          value: json # raw, json, logfmt
+          # add tags ['job', 'instance', 'pod', 'namespace']
 
   # Inject the TraceID as an exemplar in the generated metrics by the spanmetrics connector.
   connectors:

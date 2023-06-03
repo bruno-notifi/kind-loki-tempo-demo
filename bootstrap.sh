@@ -47,3 +47,7 @@ kubectl apply -f k6/configmap.yaml -n prometheus
 # Fixes
 kubectl delete deployment loki-grafana-agent-operator -n loki
 kubectl delete grafanaagents loki -n lokiw
+
+# TODO: fix grafana maps
+# TODO: fix sloth
+# TODO: fix tempo > loki integration (reverse)

@@ -56,7 +56,10 @@ grafana:
         filterByTraceID: false
         filterBySpanID: false
         customQuery: true
-        query: 'method="${__span.tags.method}"'
+        query: '{exporter="OTLP"} |="$${__span.traceId}"'
+        # query: '{container="foo"} |="$${__span.traceId}"'
+        # query: '{{exporter="OTLP"} | json | line_format "{{.body}}" | json | trace_id="$${__span.traceId}" | span_id="$${__span.spanId}"}'
+
       tracesToMetrics:
         datasourceUid: 'prometheus'
         spanStartTimeShift: '1h'
