@@ -38,8 +38,8 @@ spec:
       description: "Common SLO based on availability for HTTP request responses."
       sli:
         events:
-          errorQuery: sum(rate(http_request_duration_seconds_count{job="app",code=~"(5..|429)"}[{{.window}}]))
-          totalQuery: sum(rate(http_request_duration_seconds_count{job="app"}[{{.window}}]))
+          errorQuery: sum(rate(tns_request_duration_seconds_count{service="app",status_code=~"(5..|429)"}[{{.window}}]))
+          totalQuery: sum(rate(tns_request_duration_seconds_count{service="app"}[{{.window}}]))
       alerting:
         name: AppHighErrorRate
         labels:

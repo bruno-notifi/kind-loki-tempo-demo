@@ -8,6 +8,7 @@ helm repo add prometheus https://prometheus-community.github.io/helm-charts
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo add sloth https://slok.github.io/sloth
+helm repo add kubecost https://kubecost.github.io/cost-analyzer
 helm repo update
 
 # prometheus
@@ -28,7 +29,8 @@ kubectl create namespace otel
 helm upgrade --install -n otel --values otel-collector/values.yaml opentelemetry-collector open-telemetry/opentelemetry-collector --version=0.56.0
 
 # sloth
-helm upgrade --install -n prometheus sloth sloth/sloth --values sloth/values.yaml --version=0.7.0
+kubectl create ns sloth
+helm upgrade --install -n sloth sloth sloth/sloth --values sloth/values.yaml --version=0.7.0
 kubectl apply -f demo/slo/test.yaml -n prometheus
 kubectl apply -f sloth/configmap.yaml -n prometheus
 
@@ -49,5 +51,5 @@ kubectl delete deployment loki-grafana-agent-operator -n loki
 kubectl delete grafanaagents loki -n lokiw
 
 # TODO: fix grafana maps
-# TODO: fix sloth
-# TODO: fix tempo > loki integration (reverse)
+
+helm upgrade --install kubecost kubecost/cost-analyzer -n kubecost --create-namespace
