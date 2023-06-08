@@ -28,11 +28,10 @@ helm upgrade --install -n tempo tempo grafana/tempo --version=1.3.1
 kubectl create namespace otel
 helm upgrade --install -n otel --values otel-collector/values.yaml opentelemetry-collector open-telemetry/opentelemetry-collector --version=0.56.0
 
-# sloth
-kubectl create ns sloth
-helm upgrade --install -n sloth sloth sloth/sloth --values sloth/values.yaml --version=0.7.0
-kubectl apply -f demo/slo/test.yaml -n prometheus
-kubectl apply -f sloth/configmap.yaml -n prometheus
+# Fixes
+kubectl delete ds -n loki loki-logs
+kubectl delete deployment loki-grafana-agent-operator -n loki
+kubectl delete grafanaagents loki -n lokiw
 
 # demo
 kubectl create namespace demo
@@ -41,14 +40,16 @@ kubectl apply -f demo/svc.yaml -n demo
 kubectl apply -f demo/svc-monitor.yaml -n demo
 kubectl apply -f demo/configmap.yaml -n prometheus
 
+# sloth
+kubectl create ns sloth
+helm upgrade --install -n sloth sloth sloth/sloth --values sloth/values.yaml --version=0.7.0
+kubectl apply -f demo/slo/test.yaml -n prometheus
+kubectl apply -f sloth/configmap.yaml -n prometheus
+
 # K6
 kubectl apply -f k6/configmap.yaml -n prometheus
 # Install K6 on Linux
 # https://github.com/grafana/k6/releases/download/v0.44.1/k6-v0.44.1-linux-amd64.deb
-
-# Fixes
-kubectl delete deployment loki-grafana-agent-operator -n loki
-kubectl delete grafanaagents loki -n lokiw
 
 # TODO: fix grafana maps
 
